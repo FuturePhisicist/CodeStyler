@@ -15,15 +15,19 @@ namespace {
 class StyleCheckerVisitor : public RecursiveASTVisitor<StyleCheckerVisitor> {
 public:
     explicit StyleCheckerVisitor(ASTContext &Context)
-        : Context(Context) {}
+        : Context(Context), SM(Context.getSourceManager()) {}
 
     bool VisitVarDecl(VarDecl *VD) {
+        // // Проверяем, что текущий файл - не системный заголовок
+        // if (!SM.isInMainFile(VD->getLocation()))
+        //     return true;
+
         // Правило 3.2: Использование английских слов в именах переменных
         std::string VarName = VD->getNameAsString();
         if (std::regex_search(VarName, std::regex("[А-Яа-я]"))) {
             DiagnosticsEngine &Diag = Context.getDiagnostics();
             unsigned DiagID = Diag.getCustomDiagID(DiagnosticsEngine::Warning,
-                                                   "cariable name contains non-English characters [CMC-OS]");
+                                                   "variable name contains non-English characters [CMC-OS]");
             Diag.Report(VD->getLocation(), DiagID);
         }
 
@@ -41,6 +45,10 @@ public:
     }
 
     bool VisitFunctionDecl(FunctionDecl *FD) {
+        // // Проверяем, что текущий файл - не системный заголовок
+        // if (!SM.isInMainFile(FD->getLocation()))
+        //     return true;
+
         // Правило 3.2: Имена функций должны использовать только английские слова
         std::string FuncName = FD->getNameAsString();
         if (std::regex_search(FuncName, std::regex("[А-Яа-я]"))) {
@@ -71,6 +79,10 @@ public:
     }
 
     bool VisitCallExpr(CallExpr *CE) {
+        // // Проверяем, что текущий файл - не системный заголовок
+        // if (!SM.isInMainFile(CE->getExprLoc()))
+        //     return true;
+
         // Правило 5.8: Запрещены функции gets, strcpy, sprintf
         FunctionDecl *FD = CE->getDirectCallee();
         if (!FD)
@@ -87,8 +99,41 @@ public:
         return true;
     }
 
+    bool VisitStringLiteral(StringLiteral *SL) {
+        // // Проверяем, что текущий файл - не системный заголовок
+        // if (!SM.isInMainFile(SL->getBeginLoc()))
+        //     return true;
+
+        StringRef Str = SL->getString();
+
+        for (size_t i = 0; i < Str.size(); ++i) {
+            char c = Str[i];
+
+            if ((c < 32 && c != 10 && c != 13) || c == 127) {
+                DiagnosticsEngine &Diag = Context.getDiagnostics();
+                unsigned DiagID;
+
+                if (c == '\t')
+                {
+                    DiagID = Diag.getCustomDiagID(DiagnosticsEngine::Warning,
+                                                       "string literal contains '\\t' (R1.2) [CMC-OS]");
+                }
+                else
+                {
+                    DiagID = Diag.getCustomDiagID(DiagnosticsEngine::Warning,
+                                                       "string literal contains invalid character (R1.1) [CMC-OS]");
+                }
+                
+                Diag.Report(SL->getBeginLoc(), DiagID);
+            }
+        }
+
+        return true;
+    }
+
 private:
     ASTContext &Context;
+    const SourceManager &SM;
 };
 
 // Передний конец плагина, который инициализирует проверку
@@ -125,4 +170,3 @@ protected:
 // Регистрация плагина
 static FrontendPluginRegistry::Add<StyleCheckerAction>
 X("style-checker", "Check code style according to custom rules");
-
