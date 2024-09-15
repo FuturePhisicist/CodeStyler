@@ -182,8 +182,8 @@ int main(void)
 	// SEE IN THE BEGINNING
 
 	// Rule 4.6.1
-	if (0) // must be on previous line
-	{
+	if (0) 
+	{ // must be on previous line
 		1 == 1;
 	}
 
