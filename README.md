@@ -2,7 +2,7 @@
 	clang -cc1 -load ./libStyleCheckerPlugin.so -plugin hello-world bad_code.cpp
 
 Rule 1.1
-F
+F + P
 
 Rule 1.2
 F + P
