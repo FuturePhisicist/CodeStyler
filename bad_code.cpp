@@ -59,7 +59,7 @@ int main(void)
 
 	// Rule 1.1
 	// Will only check string constants
-	char s1[] = "\xF";
+	char s1[] = "aaa\xFA \xFF";
 
 	// Rule 1.2
 	// Will only check string constants
@@ -101,8 +101,8 @@ int main(void)
 	void *pBox;		// no Hungarian notation
 
 	// Rule 3.6
-	class binaryoperation { };	// must be UpperCamelCase
-	struct node { };			// must be UpperCamelCase
+	class binary_operation { };	// must be UpperCamelCase
+	struct node_ { };			// must be UpperCamelCase
 
 	// Rule 3.7
 	int l, I; // look like 1

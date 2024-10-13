@@ -55,8 +55,7 @@ bool CodeStyleCheckerVisitor::VisitCXXRecordDecl(CXXRecordDecl *Decl)
 		return true;
 	}
 
-	checkNameStartsWithUpperCase(Decl);
-	checkNoUnderscoreInName(Decl);
+	check_rule_3_6(Decl);
 	return true;
 }
 
@@ -110,36 +109,6 @@ bool CodeStyleCheckerVisitor::VisitStringLiteral(StringLiteral *SL)
 	return true;
 }
 
-void CodeStyleCheckerVisitor::checkNoUnderscoreInName(NamedDecl *Decl)
-{
-	auto Name = Decl->getNameAsString();
-	size_t underscorePos = Name.find('_');
-
-	if (underscorePos == StringRef::npos)
-	{
-		return;
-	}
-
-	std::string Hint = Name;
-	auto end_pos = std::remove(Hint.begin(), Hint.end(), '_');
-	Hint.erase(end_pos, Hint.end());
-
-	FixItHint FixItHint = FixItHint::CreateReplacement(
-		SourceRange(Decl->getLocation(),
-		Decl->getLocation().getLocWithOffset(Name.size())),
-		Hint);
-
-	DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
-	unsigned DiagID = DiagEngine.getCustomDiagID(
-		DiagnosticsEngine::Warning,
-		"`_` in names is not allowed");
-
-	SourceLocation UnderscoreLoc =
-		Decl->getLocation().getLocWithOffset(underscorePos);
-
-	DiagEngine.Report(UnderscoreLoc, DiagID).AddFixItHint(FixItHint);
-}
-
 void CodeStyleCheckerVisitor::checkNameStartsWithLowerCase(NamedDecl *Decl)
 {
 	auto Name = Decl->getNameAsString();
@@ -168,34 +137,6 @@ void CodeStyleCheckerVisitor::checkNameStartsWithLowerCase(NamedDecl *Decl)
 	DiagEngine.Report(Decl->getLocation(), DiagID) << FixItHint;
 }
 
-void CodeStyleCheckerVisitor::checkNameStartsWithUpperCase(NamedDecl *Decl)
-{
-	auto Name = Decl->getNameAsString();
-	char FirstChar = Name[0];
-
-	// The actual check
-	if (isUppercase(FirstChar))
-	{
-		return;
-	}
-
-	// Construct the hint
-	std::string Hint = Name;
-	Hint[0] = toUppercase(FirstChar);
-	FixItHint FixItHint = FixItHint::CreateReplacement(
-		SourceRange(
-			Decl->getLocation(),
-			Decl->getLocation().getLocWithOffset(Name.size())),
-			Hint);
-
-	// Construct the diagnostic
-	DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
-	unsigned DiagID = DiagEngine.getCustomDiagID(
-		DiagnosticsEngine::Warning,
-		"Type and variable names should start with upper-case letter");
-	DiagEngine.Report(Decl->getLocation(), DiagID) << FixItHint;
-}
-
 void CodeStyleCheckerVisitor::check_rule_1_1(StringLiteral *SL)
 {
 	StringRef Str = SL->getString();
@@ -213,11 +154,24 @@ void CodeStyleCheckerVisitor::check_rule_1_1(StringLiteral *SL)
 			// 		SL->getBeginLoc().getLocWithOffset(i + 1),
 			// 		SL->getBeginLoc().getLocWithOffset(i + 1)));
 
+			std::string Hint = std::string(Str);
+
+			const auto invalid_char_pos = Hint.begin() + i;
+
+			Hint.erase(invalid_char_pos, Hint.end());
+
+			FixItHint FixItHint = FixItHint::CreateReplacement(
+				SourceRange(SL->getBeginLoc(), SL->getEndLoc()),
+				Hint);
+			// FixItHint FixItHint = FixItHint::CreateRemoval(
+			// 	SourceRange(SL->getBeginLoc().getLocWithOffset(1), SL->getBeginLoc().getLocWithOffset(i + 1)));
+
 			DiagID = DiagEngine.getCustomDiagID(
 				DiagnosticsEngine::Warning,
 				"string literal contains invalid character (R1.1) [CMC-OS]");
 			
-			DiagEngine.Report(SL->getBeginLoc(), DiagID);
+			// DiagEngine.Report(SL->getBeginLoc(), DiagID);
+			DiagEngine.Report(SL->getBeginLoc(), DiagID).AddFixItHint(FixItHint);
 		}
 	}
 }
@@ -245,6 +199,55 @@ void CodeStyleCheckerVisitor::check_rule_1_2(StringLiteral *SL)
 			
 			DiagEngine.Report(SL->getBeginLoc(), DiagID);
 		}
+	}
+}
+
+void CodeStyleCheckerVisitor::check_rule_3_6(CXXRecordDecl *Decl)
+{
+	auto Name = Decl->getNameAsString();
+
+	std::string Hint = Name;
+
+
+	bool hasChanged = false;
+	if (!isUppercase(Name[0]))
+	{
+		Hint[0] = toUppercase(Hint[0]);
+		hasChanged = true;
+	}
+
+	size_t underscorePos = Name.find('_');
+	if (underscorePos != StringRef::npos)
+	{
+		hasChanged = true;
+		for (int i = 0; i < Hint.size() - 1; ++i)
+		{
+			if (Hint[i] == '_')
+			{
+				Hint[i + 1] = toUppercase(Hint[i + 1]);
+			}
+		}
+	}
+
+	if (hasChanged)
+	{
+		auto end_pos = std::remove(Hint.begin(), Hint.end(), '_');
+		Hint.erase(end_pos, Hint.end());
+
+		FixItHint FixItHint = FixItHint::CreateReplacement(
+			SourceRange(Decl->getLocation(),
+			Decl->getLocation().getLocWithOffset(Name.size())),
+			Hint);
+
+		DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
+		unsigned DiagID = DiagEngine.getCustomDiagID(
+			DiagnosticsEngine::Warning,
+			"type name must be in UpperCamelCase (`_` is not allowed) (R3.6) [CMC-OS]");
+
+		SourceLocation UnderscoreLoc =
+			Decl->getLocation().getLocWithOffset(underscorePos);
+
+		DiagEngine.Report(UnderscoreLoc, DiagID).AddFixItHint(FixItHint);
 	}
 }
 
