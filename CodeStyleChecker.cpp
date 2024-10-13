@@ -188,14 +188,14 @@ void CodeStyleCheckerVisitor::checkNameStartsWithUpperCase(NamedDecl *Decl)
 	DiagEngine.Report(Decl->getLocation(), DiagID) << FixItHint;
 }
 
-bool CodeStyleCheckerVisitor::VisitStringLiteral(StringLiteral *SL)
+void CodeStyleCheckerVisitor::check_rule_1_1(StringLiteral *SL)
 {
 	StringRef Str = SL->getString();
 
 	for (size_t i = 0; i < Str.size(); ++i) {
 		char c = Str[i];
 
-		if ((c < 32 && c != 10 && c != 13) || c == 127) {
+		if ((c < 32 && c != 10 && c != 13 && c != '\t') || c == 127) {
 			DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
 			unsigned DiagID;
 
@@ -205,22 +205,45 @@ bool CodeStyleCheckerVisitor::VisitStringLiteral(StringLiteral *SL)
 			// 		SL->getBeginLoc().getLocWithOffset(i + 1),
 			// 		SL->getBeginLoc().getLocWithOffset(i + 1)));
 
-			if (c != '\t')
-			{
-				DiagID = DiagEngine.getCustomDiagID(
-					DiagnosticsEngine::Warning,
-					"string literal contains invalid character (R1.1) [CMC-OS]");
-			}
-			else
-			{
-				DiagID = DiagEngine.getCustomDiagID(
-					DiagnosticsEngine::Warning,
-					"string literal contains '\\t' (R1.2) [CMC-OS]");
-			}
+			DiagID = DiagEngine.getCustomDiagID(
+				DiagnosticsEngine::Warning,
+				"string literal contains invalid character (R1.1) [CMC-OS]");
 			
 			DiagEngine.Report(SL->getBeginLoc(), DiagID);
 		}
 	}
+}
+
+void CodeStyleCheckerVisitor::check_rule_1_2(StringLiteral *SL)
+{
+	StringRef Str = SL->getString();
+
+	for (size_t i = 0; i < Str.size(); ++i) {
+		char c = Str[i];
+
+		if (c == '\t') {
+			DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
+			unsigned DiagID;
+
+			// Construct the hint
+			// FixItHint FixItHint = FixItHint::CreateRemoval(
+			// 	SourceRange(
+			// 		SL->getBeginLoc().getLocWithOffset(i + 1),
+			// 		SL->getBeginLoc().getLocWithOffset(i + 1)));
+
+			DiagID = DiagEngine.getCustomDiagID(
+				DiagnosticsEngine::Warning,
+				"string literal contains '\\t' (R1.2) [CMC-OS]");
+			
+			DiagEngine.Report(SL->getBeginLoc(), DiagID);
+		}
+	}
+}
+
+bool CodeStyleCheckerVisitor::VisitStringLiteral(StringLiteral *SL)
+{
+	check_rule_1_1(SL);
+	check_rule_1_2(SL);
 
 	return true;
 }
