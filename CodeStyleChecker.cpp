@@ -70,7 +70,7 @@ bool CodeStyleCheckerVisitor::VisitFunctionDecl(FunctionDecl *Decl)
 	}
 
 	checkNameStartsWithLowerCase(Decl);
-	checkNoUnderscoreInName(Decl);
+	// checkNoUnderscoreInName(Decl);
 	return true;
 }
 
@@ -82,8 +82,8 @@ bool CodeStyleCheckerVisitor::VisitVarDecl(VarDecl *Decl)
 		return true;
 	}
 
-	checkNameStartsWithUpperCase(Decl);
-	checkNoUnderscoreInName(Decl);
+	// checkNameStartsWithUpperCase(Decl);
+	// checkNoUnderscoreInName(Decl);
 	return true;
 }
 
@@ -96,8 +96,16 @@ bool CodeStyleCheckerVisitor::VisitFieldDecl(FieldDecl *Decl)
 		return true;
 	}
 
-	checkNameStartsWithUpperCase(Decl);
-	checkNoUnderscoreInName(Decl);
+	// checkNameStartsWithUpperCase(Decl);
+	// checkNoUnderscoreInName(Decl);
+
+	return true;
+}
+
+bool CodeStyleCheckerVisitor::VisitStringLiteral(StringLiteral *SL)
+{
+	check_rule_1_1(SL);
+	check_rule_1_2(SL);
 
 	return true;
 }
@@ -238,14 +246,6 @@ void CodeStyleCheckerVisitor::check_rule_1_2(StringLiteral *SL)
 			DiagEngine.Report(SL->getBeginLoc(), DiagID);
 		}
 	}
-}
-
-bool CodeStyleCheckerVisitor::VisitStringLiteral(StringLiteral *SL)
-{
-	check_rule_1_1(SL);
-	check_rule_1_2(SL);
-
-	return true;
 }
 
 //-----------------------------------------------------------------------------
