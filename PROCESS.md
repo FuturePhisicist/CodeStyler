@@ -13,7 +13,7 @@
 | Rule 2.3       |   ⬛   |     🟩    |
 | Rule 3.1       |   ⬛   |     ⬛    |
 | Rule 3.2       |   🟥   |     ⬛    |
-| Rule 3.3       |   🟩   |     ⬛    |
+| Rule 3.3       |   🟩 (enums don't work)   |     ⬛    |
 | Rule 3.4       |   🟩 (labels don't work)   |     ⬛    |
 | Rule 3.5       |   🟥   |     ⬛    |
 | Rule 3.6       |   🟩   |     ⬛    |
