@@ -68,8 +68,8 @@ bool CodeStyleCheckerVisitor::VisitFunctionDecl(FunctionDecl *Decl)
 		return true;
 	}
 
-	checkNameStartsWithLowerCase(Decl);
-	// checkNoUnderscoreInName(Decl);
+	check_rule_3_4(Decl);
+
 	return true;
 }
 
@@ -81,8 +81,18 @@ bool CodeStyleCheckerVisitor::VisitVarDecl(VarDecl *Decl)
 		return true;
 	}
 
-	// checkNameStartsWithUpperCase(Decl);
-	// checkNoUnderscoreInName(Decl);
+	if (Decl->isConstexpr())
+	{
+		return true;
+	}
+
+	if (Decl->getType().isConstQualified())
+	{
+		return true;
+	}
+
+	check_rule_3_4(Decl);
+
 	return true;
 }
 
@@ -95,9 +105,6 @@ bool CodeStyleCheckerVisitor::VisitFieldDecl(FieldDecl *Decl)
 		return true;
 	}
 
-	// checkNameStartsWithUpperCase(Decl);
-	// checkNoUnderscoreInName(Decl);
-
 	return true;
 }
 
@@ -106,34 +113,6 @@ bool CodeStyleCheckerVisitor::VisitStringLiteral(StringLiteral *SL)
 	check_rule_1(SL);
 
 	return true;
-}
-
-void CodeStyleCheckerVisitor::checkNameStartsWithLowerCase(NamedDecl *Decl)
-{
-	auto Name = Decl->getNameAsString();
-	char FirstChar = Name[0];
-
-	// The actual check
-	if (isLowercase(FirstChar))
-	{
-		return;
-	}
-
-	// Construct the hint
-	std::string Hint = Name;
-	Hint[0] = toLowercase(FirstChar);
-	FixItHint FixItHint = FixItHint::CreateReplacement(
-		SourceRange(
-			Decl->getLocation(),
-			Decl->getLocation().getLocWithOffset(Name.size())),
-			Hint);
-
-	// Construct the diagnostic
-	DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
-	unsigned DiagID = DiagEngine.getCustomDiagID(
-		DiagnosticsEngine::Warning,
-		"Function names should start with lower-case letter");
-	DiagEngine.Report(Decl->getLocation(), DiagID) << FixItHint;
 }
 
 void CodeStyleCheckerVisitor::check_rule_1(StringLiteral *SL)
@@ -173,6 +152,37 @@ void CodeStyleCheckerVisitor::check_rule_1(StringLiteral *SL)
 		
 		// DiagEngine.Report(SL->getBeginLoc(), DiagID);
 		DiagEngine.Report(SL->getBeginLoc(), DiagID).AddFixItHint(FixItHint);
+	}
+}
+
+void CodeStyleCheckerVisitor::check_rule_3_4(NamedDecl *Decl)
+{
+	auto Name = Decl->getNameAsString();
+
+	std::string Hint = Name;
+	std::transform(Hint.begin(), Hint.end(), Hint.begin(), ::tolower);;
+
+	if (Hint != Name)
+	{
+		FixItHint FixItHint = FixItHint::CreateReplacement(
+			SourceRange(Decl->getLocation(),
+			Decl->getLocation().getLocWithOffset(Name.size() - 1)),
+			Hint);
+
+		DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
+		unsigned DiagID = DiagEngine.getCustomDiagID(
+			DiagnosticsEngine::Warning,
+			"variable, function and label name must be in snake_case (R3.4) [CMC-OS]");
+
+		size_t firstUpperCaseChar = 0;
+		for (size_t i = 0; i < Name.size(); ++i) {
+	        if (isupper(Name[i])) {
+	            firstUpperCaseChar = i;
+	            break;
+	        }
+	    }
+
+		DiagEngine.Report(Decl->getLocation().getLocWithOffset(firstUpperCaseChar), DiagID).AddFixItHint(FixItHint);
 	}
 }
 

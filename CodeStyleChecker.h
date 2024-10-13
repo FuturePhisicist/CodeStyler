@@ -26,15 +26,15 @@ public:
 	bool VisitFunctionDecl(clang::FunctionDecl *Decl);
 	bool VisitVarDecl(clang::VarDecl *Decl);
 	bool VisitFieldDecl(clang::FieldDecl *Decl);
+    // bool VisitLabelDecl(clang::LabelDecl *Decl); Currently NOT working
 
     bool VisitStringLiteral(clang::StringLiteral *SL);
 
 private:
 	clang::ASTContext *Ctx;
 
-	void checkNameStartsWithLowerCase(clang::NamedDecl *Decl);
-
     void check_rule_1(clang::StringLiteral *SL);
+    void check_rule_3_4(clang::NamedDecl *SL);
     void check_rule_3_6(clang::CXXRecordDecl *SL);
 };
 
