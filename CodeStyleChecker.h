@@ -22,7 +22,7 @@ class CodeStyleCheckerVisitor
 {
 public:
 	explicit CodeStyleCheckerVisitor(clang::ASTContext *Ctx) : Ctx(Ctx) {}
-	bool VisitCXXRecordDecl(clang::CXXRecordDecl *Decl);
+    bool VisitTagDecl(clang::TagDecl *Decl);
 	bool VisitFunctionDecl(clang::FunctionDecl *Decl);
 	bool VisitVarDecl(clang::VarDecl *Decl);
 	bool VisitFieldDecl(clang::FieldDecl *Decl);
@@ -36,7 +36,7 @@ private:
     void check_rule_1(clang::StringLiteral *SL);
     void check_rule_3_3(clang::NamedDecl *SL);
     void check_rule_3_4(clang::NamedDecl *SL);
-    void check_rule_3_6(clang::CXXRecordDecl *SL);
+    void check_rule_3_6(clang::NamedDecl *SL);
 };
 
 //-----------------------------------------------------------------------------

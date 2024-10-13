@@ -46,8 +46,9 @@ using namespace clang;
 //-----------------------------------------------------------------------------
 // CodeStyleCheckerVisitor implementation
 //-----------------------------------------------------------------------------
-bool CodeStyleCheckerVisitor::VisitCXXRecordDecl(CXXRecordDecl *Decl)
+bool CodeStyleCheckerVisitor::VisitTagDecl(TagDecl *Decl)
 {
+	// Skip anonymous enums:
 	// Skip anonymous records, e.g. unions:
 	//    * https://en.cppreference.com/w/cpp/language/union
 	if (0 == Decl->getNameAsString().size())
@@ -56,6 +57,7 @@ bool CodeStyleCheckerVisitor::VisitCXXRecordDecl(CXXRecordDecl *Decl)
 	}
 
 	check_rule_3_6(Decl);
+
 	return true;
 }
 
@@ -215,32 +217,40 @@ void CodeStyleCheckerVisitor::check_rule_3_4(NamedDecl *Decl)
 	}
 }
 
-void CodeStyleCheckerVisitor::check_rule_3_6(CXXRecordDecl *Decl)
+void CodeStyleCheckerVisitor::check_rule_3_6(NamedDecl *Decl)
 {
 	auto Name = Decl->getNameAsString();
 
-	std::string Hint = Name;
+	std::string Hint;
 
 
 	bool hasChanged = false;
-	if (!isUppercase(Name[0]))
-	{
-		Hint[0] = toUppercase(Hint[0]);
-		hasChanged = true;
-	}
+	size_t firstChangedPos = 0;
 
-	size_t underscorePos = Name.find('_');
-	if (underscorePos != StringRef::npos)
-	{
-		hasChanged = true;
-		for (int i = 0; i < Hint.size() - 1; ++i)
-		{
-			if (Hint[i] == '_')
-			{
-				Hint[i + 1] = toUppercase(Hint[i + 1]);
-			}
-		}
-	}
+    for (size_t i = 0, n = Name.size(); i < n; ++i) {
+        if (Name[i] == '_') {
+        	if (!hasChanged)
+        	{
+	            firstChangedPos = i;
+        	}
+            hasChanged = true;
+            continue;
+        }
+        if (i == 0 || Name[i - 1] == '_') {
+            if (!isupper(Name[i])) {
+            	if (!hasChanged)
+	        	{
+		            firstChangedPos = i;
+	        	}
+                hasChanged = true;
+                Hint += toupper(Name[i]);
+            } else {
+                Hint += Name[i];
+            }
+        } else {
+            Hint += Name[i];
+        }
+    }
 
 	if (hasChanged)
 	{
@@ -255,10 +265,10 @@ void CodeStyleCheckerVisitor::check_rule_3_6(CXXRecordDecl *Decl)
 		DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
 		unsigned DiagID = DiagEngine.getCustomDiagID(
 			DiagnosticsEngine::Warning,
-			"type name must be in UpperCamelCase (`_` is not allowed) (R3.6) [CMC-OS]");
+			"type and tag names must be in UpperCamelCase (`_` is not allowed) (R3.6) [CMC-OS]");
 
 		SourceLocation UnderscoreLoc =
-			Decl->getLocation().getLocWithOffset(underscorePos);
+			Decl->getLocation().getLocWithOffset(firstChangedPos);
 
 		DiagEngine.Report(UnderscoreLoc, DiagID).AddFixItHint(FixItHint);
 	}
