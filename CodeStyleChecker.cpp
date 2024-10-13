@@ -188,6 +188,43 @@ void CodeStyleCheckerVisitor::checkNameStartsWithUpperCase(NamedDecl *Decl)
 	DiagEngine.Report(Decl->getLocation(), DiagID) << FixItHint;
 }
 
+bool CodeStyleCheckerVisitor::VisitStringLiteral(StringLiteral *SL)
+{
+	StringRef Str = SL->getString();
+
+	for (size_t i = 0; i < Str.size(); ++i) {
+		char c = Str[i];
+
+		if ((c < 32 && c != 10 && c != 13) || c == 127) {
+			DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
+			unsigned DiagID;
+
+			// Construct the hint
+			// FixItHint FixItHint = FixItHint::CreateRemoval(
+			// 	SourceRange(
+			// 		SL->getBeginLoc().getLocWithOffset(i + 1),
+			// 		SL->getBeginLoc().getLocWithOffset(i + 1)));
+
+			if (c != '\t')
+			{
+				DiagID = DiagEngine.getCustomDiagID(
+					DiagnosticsEngine::Warning,
+					"string literal contains invalid character (R1.1) [CMC-OS]");
+			}
+			else
+			{
+				DiagID = DiagEngine.getCustomDiagID(
+					DiagnosticsEngine::Warning,
+					"string literal contains '\\t' (R1.2) [CMC-OS]");
+			}
+			
+			DiagEngine.Report(SL->getBeginLoc(), DiagID);
+		}
+	}
+
+	return true;
+}
+
 //-----------------------------------------------------------------------------
 // FrontendAction
 //-----------------------------------------------------------------------------

@@ -1,5 +1,7 @@
 	clang++ -shared -fPIC -o libStyleCheckerPlugin.so CodeStyleCheckerMain.cpp CodeStyleChecker.cpp `llvm-config --cxxflags --ldflags --system-libs --libs all`
+
 	clang -cc1 -load ./libStyleCheckerPlugin.so -plugin hello-world bad_code.cpp
+	clang++ -c -Xclang -load -Xclang ./libStyleCheckerPlugin.so -Xclang -plugin -Xclang CSC bad_code.cpp
 
 Rule 1.1
 F + P

@@ -27,6 +27,8 @@ public:
 	bool VisitVarDecl(clang::VarDecl *Decl);
 	bool VisitFieldDecl(clang::FieldDecl *Decl);
 
+    bool VisitStringLiteral(clang::StringLiteral *SL);
+
 private:
 	clang::ASTContext *Ctx;
 
