@@ -81,13 +81,11 @@ bool CodeStyleCheckerVisitor::VisitVarDecl(VarDecl *Decl)
 		return true;
 	}
 
-	if (Decl->isConstexpr())
+	// if (constexpr Decl || const Decl)
+	if (Decl->isConstexpr() || Decl->getType().isConstQualified())
 	{
-		return true;
-	}
+		check_rule_3_3(Decl);
 
-	if (Decl->getType().isConstQualified())
-	{
 		return true;
 	}
 
@@ -152,6 +150,37 @@ void CodeStyleCheckerVisitor::check_rule_1(StringLiteral *SL)
 		
 		// DiagEngine.Report(SL->getBeginLoc(), DiagID);
 		DiagEngine.Report(SL->getBeginLoc(), DiagID).AddFixItHint(FixItHint);
+	}
+}
+
+void CodeStyleCheckerVisitor::check_rule_3_3(NamedDecl *Decl)
+{
+	auto Name = Decl->getNameAsString();
+
+	std::string Hint = Name;
+	std::transform(Hint.begin(), Hint.end(), Hint.begin(), ::toupper);;
+
+	if (Hint != Name)
+	{
+		FixItHint FixItHint = FixItHint::CreateReplacement(
+			SourceRange(Decl->getLocation(),
+			Decl->getLocation().getLocWithOffset(Name.size() - 1)),
+			Hint);
+
+		DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
+		unsigned DiagID = DiagEngine.getCustomDiagID(
+			DiagnosticsEngine::Warning,
+			"consts, constexprs and enums name must be in SCREAMING_SNAKE_CASE (R3.3) [CMC-OS]");
+
+		size_t firstLowerCaseChar = 0;
+		for (size_t i = 0; i < Name.size(); ++i) {
+	        if (islower(Name[i])) {
+	            firstLowerCaseChar = i;
+	            break;
+	        }
+	    }
+
+		DiagEngine.Report(Decl->getLocation().getLocWithOffset(firstLowerCaseChar), DiagID).AddFixItHint(FixItHint);
 	}
 }
 

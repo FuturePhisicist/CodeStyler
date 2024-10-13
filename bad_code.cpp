@@ -86,7 +86,9 @@ int main(void)
 	int vychislenie_kornya;
 
 	// Rule 3.3
-	enum {incorrect_case}; // must be UPPER_CASE
+	enum {incorrect_case}; // must be SCREAMING_SNAKE_CASE
+	const double incorrect_pi = 4; // must be SCREAMING_SNAKE_CASE
+	constexpr double incorrect_e = 2; // must be SCREAMING_SNAKE_CASE
 
 	// Rule 3.4
 	int SOME_VAR; // must be lower_case
@@ -102,7 +104,8 @@ int main(void)
 
 	// Rule 3.6
 	class binary_operation { };	// must be UpperCamelCase
-	struct node_ { };			// must be UpperCamelCase
+	struct nODE_ { };			// must be UpperCamelCase
+	enum INCORRECT_NAME{};		// must be UpperCamelCase
 
 	// Rule 3.7
 	int l, I; // look like 1

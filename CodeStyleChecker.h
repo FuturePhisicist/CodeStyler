@@ -34,6 +34,7 @@ private:
 	clang::ASTContext *Ctx;
 
     void check_rule_1(clang::StringLiteral *SL);
+    void check_rule_3_3(clang::NamedDecl *SL);
     void check_rule_3_4(clang::NamedDecl *SL);
     void check_rule_3_6(clang::CXXRecordDecl *SL);
 };
