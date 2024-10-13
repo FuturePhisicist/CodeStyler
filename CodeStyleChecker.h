@@ -34,8 +34,7 @@ private:
 
 	void checkNameStartsWithLowerCase(clang::NamedDecl *Decl);
 
-    void check_rule_1_1(clang::StringLiteral *SL);
-    void check_rule_1_2(clang::StringLiteral *SL);
+    void check_rule_1(clang::StringLiteral *SL);
     void check_rule_3_6(clang::CXXRecordDecl *SL);
 };
 

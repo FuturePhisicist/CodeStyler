@@ -103,8 +103,7 @@ bool CodeStyleCheckerVisitor::VisitFieldDecl(FieldDecl *Decl)
 
 bool CodeStyleCheckerVisitor::VisitStringLiteral(StringLiteral *SL)
 {
-	check_rule_1_1(SL);
-	check_rule_1_2(SL);
+	check_rule_1(SL);
 
 	return true;
 }
@@ -137,68 +136,43 @@ void CodeStyleCheckerVisitor::checkNameStartsWithLowerCase(NamedDecl *Decl)
 	DiagEngine.Report(Decl->getLocation(), DiagID) << FixItHint;
 }
 
-void CodeStyleCheckerVisitor::check_rule_1_1(StringLiteral *SL)
+void CodeStyleCheckerVisitor::check_rule_1(StringLiteral *SL)
 {
 	StringRef Str = SL->getString();
+
+	bool hasChanged = false;
+	std::string Hint;
 
 	for (size_t i = 0; i < Str.size(); ++i) {
 		char c = Str[i];
 
-		if ((c < 32 && c != 10 && c != 13 && c != '\t') || c == 127) {
-			DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
-			unsigned DiagID;
+		// printf("%d\n", c);
 
-			// Construct the hint
-			// FixItHint FixItHint = FixItHint::CreateRemoval(
-			// 	SourceRange(
-			// 		SL->getBeginLoc().getLocWithOffset(i + 1),
-			// 		SL->getBeginLoc().getLocWithOffset(i + 1)));
-
-			std::string Hint = std::string(Str);
-
-			const auto invalid_char_pos = Hint.begin() + i;
-
-			Hint.erase(invalid_char_pos, Hint.end());
-
-			FixItHint FixItHint = FixItHint::CreateReplacement(
-				SourceRange(SL->getBeginLoc(), SL->getEndLoc()),
-				Hint);
-			// FixItHint FixItHint = FixItHint::CreateRemoval(
-			// 	SourceRange(SL->getBeginLoc().getLocWithOffset(1), SL->getBeginLoc().getLocWithOffset(i + 1)));
-
-			DiagID = DiagEngine.getCustomDiagID(
-				DiagnosticsEngine::Warning,
-				"string literal contains invalid character (R1.1) [CMC-OS]");
-			
-			// DiagEngine.Report(SL->getBeginLoc(), DiagID);
-			DiagEngine.Report(SL->getBeginLoc(), DiagID).AddFixItHint(FixItHint);
+		if ((c < 32 && c != 10 && c != 13) || c == 127) {
+			hasChanged = true;
+		}
+		else
+		{
+			Hint.push_back(c);
 		}
 	}
-}
 
-void CodeStyleCheckerVisitor::check_rule_1_2(StringLiteral *SL)
-{
-	StringRef Str = SL->getString();
+	Hint = "\"" + Hint + "\"";
 
-	for (size_t i = 0; i < Str.size(); ++i) {
-		char c = Str[i];
+	if (hasChanged)
+	{
+		DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
 
-		if (c == '\t') {
-			DiagnosticsEngine &DiagEngine = Ctx->getDiagnostics();
-			unsigned DiagID;
+		FixItHint FixItHint = FixItHint::CreateReplacement(
+			SourceRange(SL->getBeginLoc(), SL->getEndLoc()),
+			Hint);
 
-			// Construct the hint
-			// FixItHint FixItHint = FixItHint::CreateRemoval(
-			// 	SourceRange(
-			// 		SL->getBeginLoc().getLocWithOffset(i + 1),
-			// 		SL->getBeginLoc().getLocWithOffset(i + 1)));
-
-			DiagID = DiagEngine.getCustomDiagID(
-				DiagnosticsEngine::Warning,
-				"string literal contains '\\t' (R1.2) [CMC-OS]");
-			
-			DiagEngine.Report(SL->getBeginLoc(), DiagID);
-		}
+		unsigned DiagID = DiagEngine.getCustomDiagID(
+			DiagnosticsEngine::Warning,
+			"string literal contains invalid characters (including '\\t') (R1.1, R1.2) [CMC-OS]");
+		
+		// DiagEngine.Report(SL->getBeginLoc(), DiagID);
+		DiagEngine.Report(SL->getBeginLoc(), DiagID).AddFixItHint(FixItHint);
 	}
 }
 
