@@ -26,6 +26,7 @@ public:
 	bool VisitFunctionDecl(clang::FunctionDecl *Decl);
 	bool VisitVarDecl(clang::VarDecl *Decl);
 	bool VisitFieldDecl(clang::FieldDecl *Decl);
+    bool VisitEnumConstantDecl(clang::EnumConstantDecl *Decl);
     // bool VisitLabelDecl(clang::LabelDecl *Decl); Currently NOT working
 
     bool VisitStringLiteral(clang::StringLiteral *SL);

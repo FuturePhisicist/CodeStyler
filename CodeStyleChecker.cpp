@@ -96,6 +96,13 @@ bool CodeStyleCheckerVisitor::VisitVarDecl(VarDecl *Decl)
 	return true;
 }
 
+bool CodeStyleCheckerVisitor::VisitEnumConstantDecl(EnumConstantDecl *Decl)
+{
+	check_rule_3_3(Decl);
+
+	return true;
+}
+
 bool CodeStyleCheckerVisitor::VisitFieldDecl(FieldDecl *Decl)
 {
 	// Skip anonymous bit-fields:
